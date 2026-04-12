@@ -1,0 +1,10 @@
+diff --git a/loader/Makefile.in b/loader/Makefile.in
+index 29678df71ef..73937577da2 100644
+--- a/loader/Makefile.in
++++ b/loader/Makefile.in
+@@ -18,4 +18,4 @@ wine_LDFLAGS = $(WINELOADER_LDFLAGS) $(LDEXECFLAGS) $(PTHREAD_LIBS)
+ 
+ wine_preloader_OBJS = preloader.o preloader_mac.o
+ wine_preloader_DEPS = $(WINELOADER_DEPENDS)
+-wine_preloader_LDFLAGS = $(WINEPRELOADER_LDFLAGS)
++wine_preloader_LDFLAGS = $(WINEPRELOADER_LDFLAGS) $(LDFLAGS)

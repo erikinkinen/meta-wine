@@ -1,26 +1,14 @@
 diff --git a/tools/makedep.c b/tools/makedep.c
-index 3fe2d254fdf..79873a785fd 100644
+index b0d7ad62b86..64e658ebfe5 100644
 --- a/tools/makedep.c
 +++ b/tools/makedep.c
-@@ -2478,7 +2478,7 @@ static void output_winegcc_command( struct makefile *make, unsigned int arch )
+@@ -2626,7 +2626,8 @@ static void output_winegcc_command( struct makefile *make, unsigned int arch )
          output_filename( "--winebuild" );
-         output_filename( tools_path( make, "winebuild" ));
+         output_filename( winebuild );
      }
 -    output_filenames( target_flags[arch] );
-+    //output_filenames( target_flags[arch] );
++    /* Let the configured cross-compiler keep Yocto sysroot flags intact. */
++    /* output_filenames( target_flags[arch] ); */
      if (native_archs[arch] && !make->disabled[native_archs[arch]])
          output_filenames( hybrid_target_flags[arch] );
      if (arch) return;
-diff --git a/tools/winegcc/utils.c b/tools/winegcc/utils.c
-index d8037738cae..007701eeb1b 100644
---- a/tools/winegcc/utils.c
-+++ b/tools/winegcc/utils.c
-@@ -30,7 +30,7 @@
- 
- #include "utils.h"
- 
--int verbose = 0;
-+int verbose = 1;
- 
- void error(const char* s, ...)
- {

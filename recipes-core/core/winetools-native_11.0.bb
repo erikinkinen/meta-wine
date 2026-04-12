@@ -1,21 +1,28 @@
-inherit autotools
+SUMMARY = "Wine tools for native builds"
+DESCRIPTION = "Wine tools for native builds"
+HOMEPAGE = "https://www.winehq.org/"
+SECTION = "devel"
+
+inherit autotools pkgconfig
 inherit native
 
 AUTORECONF = "no"
-LICENSE = "LGPLv2"
+LICENSE = "LGPL-2.1-or-later"
+
 # The winegcc patch fixes how winegcc calls the cross compiler
 # It does this by removing the -b switch from calls to winegcc
 # Making winegcc fall back on the default which is the one the CC environment variable points to
 # during the configure stage. Since bitbake adds all the necessary switches for the cross compiler to
 # find libs to CC this fixes the build w.r.t winegcc
- 
-SRC_URI = "git://gitlab.winehq.org/wine/wine.git;protocol=https;branch=master file://patch_winegcc.patch"
-SRCREV = "5b3306a0d0aff221195ecc29872f25ed082eedd0"
-SRC_URI[sha256sum] = "3384810c536cfab020ab4af809bbb677f59bc46ec528c70f7ca27d0c8a42b397"
-LIC_FILES_CHKSUM = "file://${WORKDIR}/git/LICENSE;md5=f52e77babf61480e86e8a5bbe3fdf1e8"
-S = "${WORKDIR}/git"
+SRC_URI = "https://dl.winehq.org/wine/source/${PV}/wine-${PV}.tar.xz;subdir=${BP};striplevel=1 \
+           file://patch_winegcc.patch \
+"
+SRC_URI[sha256sum] = "c07a6857933c1fc60dff5448d79f39c92481c1e9db5aa628db9d0358446e0701"
 
-DEPENDS = "autoconf automake libtool pkgconfig"
+S = "${WORKDIR}/${BP}"
+LIC_FILES_CHKSUM = "file://${S}/LICENSE;md5=727e499c6b317fcc90840ad84415793f"
+
+DEPENDS = "autoconf automake libtool pkgconfig freetype-native"
 
 AUTOTOOLS_SCRIPT_PATH ?= "${S}"
 CONFIGURE_SCRIPT ?= "${AUTOTOOLS_SCRIPT_PATH}/configure"
@@ -31,11 +38,11 @@ do_configure() {
 autotools_aclocals() {
 }
 
-#BBCLASSEXTEND = "native nativesdk"
+BBCLASSEXTEND = "native nativesdk"
 
 DEPENDS += "flex-native bison-native"
 
-EXTRA_OECONF += " --without-x --without-freetype "
+EXTRA_OECONF += " --without-x "
 
 # Conditionally add --enable-win64 based on native architecture
 # This is needed to make sure the configure script won't tell gcc to generate 32 bit applications
@@ -57,4 +64,3 @@ do_install() {
 	cp -R ${WORKDIR}/build/tools ${D}${bindir}
 	cp -R ${S}/nls/*.nls ${D}${bindir}/nls
 }
-
