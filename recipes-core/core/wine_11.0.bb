@@ -52,6 +52,18 @@ do_configure() {
 autotools_aclocals() {
 }
 
+do_install:append() {
+        install -d ${D}${bindir}
+
+        wine_loader=$(find ${D}${libdir}/wine -maxdepth 2 -type f -name wine | sed -n '1p')
+        if [ -z "${wine_loader}" ]; then
+                bbfatal "Could not find installed Wine loader under ${D}${libdir}/wine"
+        fi
+
+        wine_loader_dir=$(basename "$(dirname "${wine_loader}")")
+        ln -snf ../lib/wine/${wine_loader_dir}/wine ${D}${bindir}/wine
+}
+
 EXTRA_OECONF += " --with-wine-tools=${STAGING_BINDIR_NATIVE}"
 EXTRA_OECONF += "${@bb.utils.contains('DISTRO_FEATURES', 'x11', '', '--without-x', d)}"
 EXTRA_OEMAKE += "WITH_NLS=./nls"
