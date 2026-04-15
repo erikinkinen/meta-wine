@@ -1,4 +1,4 @@
-SUMMARY = "Wine is a compatibility layer for running Windows applications on Unix-like operating systems."
+SUMMARY ?= "Wine is a compatibility layer for running Windows applications on Unix-like operating systems."
 DESCRIPTION = "Wine is a compatibility layer for running Windows applications on Unix-like operating systems. It provides a software library, known as Winelib, against which developers can compile Windows applications to help port them to Unix-like systems. Wine also provides a program loader, which allows many unmodified Windows applications to run on Unix-like systems."
 HOMEPAGE = "https://www.winehq.org/"
 SECTION = "devel"
@@ -8,14 +8,22 @@ inherit autotools mime-xdg pkgconfig
 AUTORECONF = "no"
 LICENSE = "LGPL-2.1-or-later"
 
-SRC_URI = "https://dl.winehq.org/wine/source/${PV}/wine-${PV}.tar.xz;subdir=${BP};striplevel=1 \
-           file://patch_winegcc.patch \
+WINE_SOURCE_SERIES ?= "${@d.getVar('PV').split('.')[0]}.x"
+WINE_TARBALL_URI ?= "https://dl.winehq.org/wine/source/${WINE_SOURCE_SERIES}/wine-${PV}.tar.xz"
+WINEGCC_PATCH ?= "file://patch_winegcc.patch"
+WINE_TOOLS_RECIPE ?= ""
+WINE_TOOLS_SUBDIR ?= ""
+WINE_LICENSE_MD5 ?= "727e499c6b317fcc90840ad84415793f"
+
+SRC_URI = "${WINE_TARBALL_URI};name=wine;subdir=${BP};striplevel=1 \
+           ${WINEGCC_PATCH} \
            file://patch_preloader_ldflags.patch \
 "
-SRC_URI[sha256sum] = "c07a6857933c1fc60dff5448d79f39c92481c1e9db5aa628db9d0358446e0701"
 
 S = "${WORKDIR}/${BP}"
-LIC_FILES_CHKSUM = "file://${S}/LICENSE;md5=727e499c6b317fcc90840ad84415793f"
+LIC_FILES_CHKSUM = "file://${S}/LICENSE;md5=${WINE_LICENSE_MD5}"
+
+RPROVIDES:${PN} += "virtual-wine"
 
 DEPENDS += "autoconf automake libtool pkgconfig \
            alsa-lib \
@@ -24,6 +32,9 @@ DEPENDS += "autoconf automake libtool pkgconfig \
            libusb1 \
            pulseaudio \
            udev \
+           ${WINE_TOOLS_RECIPE} \
+           flex-native \
+           bison-native \
 "
 DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'x11', 'libx11 libxcomposite libxcursor libxi libxinerama libxrandr', '', d)}"
 DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'x11 opengl', 'libxxf86vm virtual/libgl', '', d)}"
@@ -64,11 +75,10 @@ do_install:append() {
         ln -snf ../lib/wine/${wine_loader_dir}/wine ${D}${bindir}/wine
 }
 
-EXTRA_OECONF += " --with-wine-tools=${STAGING_BINDIR_NATIVE}"
+EXTRA_OECONF += " --with-wine-tools=${STAGING_BINDIR_NATIVE}/${WINE_TOOLS_SUBDIR}"
 EXTRA_OECONF += "${@bb.utils.contains('DISTRO_FEATURES', 'x11', '', '--without-x', d)}"
 EXTRA_OEMAKE += "WITH_NLS=./nls"
 
-DEPENDS += "winetools-native flex-native bison-native"
-
 FILES:${PN}-staticdev += "${libdir}/**/*.a ${includedir}"
 FILES:${PN}-dev += "${libdir}/*.so ${includedir}"
+FILES:${PN} += "${libdir}/wine ${datadir}/wine"

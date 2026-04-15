@@ -1,0 +1,12 @@
+--- a/tools/makedep.c
++++ b/tools/makedep.c
+@@ -2782,7 +2782,8 @@ static void output_winegcc_command( struct makefile *make, unsigned int arch )
+         output_filename( winebuild );
+     }
+     if (cc_cmds[arch]) output_filename( cc_cmds[arch] );
+-    output_filenames( target_flags[arch] );
++    /* Let the configured cross-compiler keep Yocto sysroot flags intact. */
++    /* output_filenames( target_flags[arch] ); */
+     if (native_archs[arch] && !make->disabled[native_archs[arch]])
+         output_filenames( hybrid_target_flags[arch] );
+     if (arch) return;
