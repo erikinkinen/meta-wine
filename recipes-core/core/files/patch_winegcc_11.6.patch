@@ -1,11 +1,9 @@
-diff --git a/tools/makedep.c b/tools/makedep.c
-index b0d7ad62b86..64e658ebfe5 100644
 --- a/tools/makedep.c
 +++ b/tools/makedep.c
-@@ -2626,7 +2626,8 @@ static void output_winegcc_command( struct makefile *make, unsigned int arch )
-         output_filename( "--winebuild" );
+@@ -2782,7 +2782,8 @@ static void output_winegcc_command( struct makefile *make, unsigned int arch )
          output_filename( winebuild );
      }
+     if (cc_cmds[arch]) output_filename( cc_cmds[arch] );
 -    output_filenames( target_flags[arch] );
 +    /* Let the configured cross-compiler keep Yocto sysroot flags intact. */
 +    /* output_filenames( target_flags[arch] ); */
