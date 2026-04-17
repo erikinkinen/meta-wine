@@ -1,0 +1,39 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Erik Inkinen <erik.inkinen@erikinkinen.fi>
+Date: Fri, 17 Apr 2026 14:40:00 +0200
+Subject: [PATCH] tools/makedep: restore PE target flags for winegcc
+
+meta-wine patches Wine 11.6 to suppress the generated `-b <target>` flags in
+winegcc rules so Yocto can keep its configured cross-compiler sysroot flags.
+That works for mingw-style toolchains, but breaks the clang/lld PE path we use
+for ARM64: the generated winegcc rules only pass `--cc-cmd="clang -D__STDC__"`
+and never tell winegcc/winebuild that the link target is `aarch64-windows`.
+
+As a result, winegcc falls back to the default non-PE target logic and
+winebuild ends up invoking the host `ld` on ARM64 PE/COFF objects during the
+spec-generation phase, which fails with "file format not recognized".
+
+Restore the upstream target flag emission so ARM64 winegcc link rules carry
+`-b aarch64-windows` again. This patch is applied only for the local ARM64
+builds in meta-wine, leaving other architectures untouched.
+---
+ tools/makedep.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/tools/makedep.c b/tools/makedep.c
+index 64e658e..b0d7ad6 100644
+--- a/tools/makedep.c
++++ b/tools/makedep.c
+@@ -2783,8 +2783,8 @@ static void output_winegcc_command( struct makefile *make, unsigned int arch )
+         output_filename( winebuild );
+     }
+     if (cc_cmds[arch]) output_filename( cc_cmds[arch] );
+-    /* Let the configured cross-compiler keep Yocto sysroot flags intact. */
+-    /* output_filenames( target_flags[arch] ); */
++    /* ARM64 clang/lld PE builds still need the Wine target passed explicitly. */
++    output_filenames( target_flags[arch] );
+     if (native_archs[arch] && !make->disabled[native_archs[arch]])
+         output_filenames( hybrid_target_flags[arch] );
+     if (arch) return;
+-- 
+2.47.2

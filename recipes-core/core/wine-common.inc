@@ -41,6 +41,7 @@ DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'x11 opengl', 'libxxf86vm vi
 DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'wayland', 'libxkbcommon wayland wayland-native wayland-protocols', '', d)}"
 DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'opengl', 'virtual/egl', '', d)}"
 DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'vulkan', 'vulkan-loader', '', d)}"
+DEPENDS:append:aarch64 = " llvm-native"
 
 AUTOTOOLS_SCRIPT_PATH ?= "${S}"
 CONFIGURE_SCRIPT ?= "${AUTOTOOLS_SCRIPT_PATH}/configure"
@@ -58,6 +59,13 @@ do_configure() {
         else
                 bbnote "nothing to configure"
         fi
+}
+
+do_configure:append:aarch64() {
+        # Wine's ARM64 winegcc link rules consume aarch64_LDFLAGS directly.
+        # Prefix the PE target there so winegcc and winebuild stay on clang/lld.
+        sed -i 's#^aarch64_LDFLAGS = #aarch64_LDFLAGS = --target=aarch64-windows #' ${B}/Makefile
+        sed -i 's#^aarch64_LDFLAGS = #aarch64_LDFLAGS = --target=aarch64-windows #' ${B}/config.status
 }
 
 autotools_aclocals() {
@@ -82,3 +90,10 @@ EXTRA_OEMAKE += "WITH_NLS=./nls"
 FILES:${PN}-staticdev += "${libdir}/**/*.a ${includedir}"
 FILES:${PN}-dev += "${libdir}/*.so ${includedir}"
 FILES:${PN} += "${libdir}/wine ${datadir}/wine"
+
+# Wine installs PE/COFF import archives under /usr/lib/wine/aarch64-windows.
+# Keep ELF debuginfo splitting enabled, but avoid source/static archive
+# handling paths that assume every .a input is an ELF file.
+PACKAGE_DEBUG_SPLIT_STYLE:aarch64 = "debug-without-src"
+PACKAGE_DEBUG_STATIC_SPLIT:aarch64 = "0"
+PACKAGE_STRIP_STATIC:aarch64 = "0"

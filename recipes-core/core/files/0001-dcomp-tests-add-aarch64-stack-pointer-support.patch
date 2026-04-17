@@ -1,0 +1,36 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Erik Inkinen <erik.inkinen@erikinkinen.fi>
+Date: Fri, 17 Apr 2026 12:15:00 +0200
+Subject: [PATCH] dcomp/tests: add aarch64 stack pointer support
+
+The DirectComposition tests read the current stack pointer to validate call
+stack stability around a few entry points. The test already supports x86 and
+x86_64 PE builds, but ARM64 PE builds fall into an unconditional
+"Unsupported architecture" preprocessor error even though Wine now builds PE
+objects for aarch64.
+
+Teach the helper to read the ARM64 stack pointer so the 11.6 test suite
+compiles under the Yocto-native clang/lld PE toolchain.
+---
+ dlls/dcomp/tests/dcomp.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/dlls/dcomp/tests/dcomp.c b/dlls/dcomp/tests/dcomp.c
+index 96c2eab..59929e7 100644
+--- a/dlls/dcomp/tests/dcomp.c
++++ b/dlls/dcomp/tests/dcomp.c
+@@ -49,6 +49,12 @@ static void *get_stack_pointer(void)
+     __asm__ __volatile__("movq %%rsp, %0"
+                          : "=r"(stack_pointer) /* output */
+                          :                     /* no input */
++                         :                     /* no clobbered registers */
++    );
++#elif defined(__aarch64__)
++    __asm__ __volatile__("mov %0, sp"
++                         : "=r"(stack_pointer) /* output */
++                         :                     /* no input */
+                          :                     /* no clobbered registers */
+     );
+ #else
+-- 
+2.47.2
